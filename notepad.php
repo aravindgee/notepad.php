@@ -3,12 +3,20 @@
 	<head>
 		<title>notepad.php: No-Nonsense Note-taking.</title>
 		<style type="text/css">
-			body { text-align: left; font-size: 12px; font-family: monospace }
-			.textbox { border: 1px solid #C0C0C0; padding: 1px; width: 250px;}
-			.textbox:active { background-color: #CCC }
-			.textarea { width: 75%;}
-			.button { border: 1px solid blue; background-color: #DDD; padding: 5px; margin: 5px; width: 70px }
+			body { text-align: center; font-size: 11px; margin: auto; padding: 1em; }
+			body, input { font-family: Consolas, 'Courier New', FreeMono, monospace; }
+			.container { font-size: 1.1em; width: 85%; text-align: left; margin: auto; padding: 2em; border: 0.1em solid #BBB}
+			.textbox {  border: 0.1em solid #C0C0C0; padding: 0.2em; width: 20em;}
+			.textbox:active, textarea:active { background-color: #DDD }
+			.textbox:focus, textarea:focus { border: 0.1em dashed teal }
+			.textarea { width: 75%; margin: 1em; padding: 0.5em}
+			.button { border: 0.1em solid blue; background-color: #DDD; padding: 0.2em; margin: 0.3em; width: 4em }
 			.button:active { background-color: #C0C0C0 }
+			a { text-decoration: none; color: navy}
+			a:hover, a:active { color: red }
+			.header { background: #000; color: #ccc; padding: 0.9em; margin-bottom: 0.9em; font-size: 1.3em; font-weight: bold; text-align: center}
+			label {width:16em; height: 0.9em; margin: 0.4em; padding: 0.4em; display: inline-block}
+
 		</style>
 		<script type="text/javascript">
 			function doInit()
@@ -16,32 +24,110 @@
 		</script>	
 	</head>
 	<body onLoad="doInit()">
-		<form action="notepad.php" method="POST">
+		<div class="container">
+		<form action="" method="POST">
 
 <?php
 
-//User Data
-$noteTime = "Wed Jul 25 2012 15:11:58 GMT+0530 (IST)";
-$noteBody = "thw quick brown foz";
-$noteRead = "";
-$noteWrite = "C";
+//Data 'stored' in this file
+$noteTime = "Sun Feb 10 2013 21:52:05";
+$noteBody = "Hello World!";
+$noteReadPass = "";
+$noteWritePass = "";
 
-if(isset($_POST["txtRead"])) //Perform write operations
+//Mode: n = none, r = read, w = write
+$noteMode = "n"; 
+
+//Data sent by the user
+$usrReadPass = "";
+$usrWritePass = "";
+
+//If read password has been sent by the client, validate it.
+if(isset($_POST["btnRead"]))
 {
+	$usrReadPass = isset($_POST["pwdReadPass"])?$_POST["pwdReadPass"]:"";
+	if($usrReadPass == $noteReadPass)
+		$noteMode = "r";
+}
+
+//If write password has been sent by the client, validate it.
+else if(isset($_POST["btnWrite"]))
+{
+	$usrWritePass = isset($_POST["pwdWritePass"])?$_POST["pwdWritePass"]:"";
+	if($usrWritePass == $noteWritePass)
+		$noteMode = "w";
+}
+
+//If passwords have been set, and no password validation has been done, send authentication notice.
+if($noteMode == "n" && !isset($_POST["txtWrite"]))
+{
+	echo '<div class="header">Notepad &mid; Authentication Required</div>';
+
+	if(isset($_GET["write"]) && $noteWritePass != "") //User is converting read to write mode
+	{
+		echo 'Write: <input type="password" class="textbox" name="pwdWritePass" /> <input class="button" type="submit" name="btnWrite" value="GO" />';
+		echo '</form></div></body></html>';
+		exit;
+	}
+	if($noteReadPass != "") //Authentication for reading as well as writing.
+	{
+		echo '<label>Read</label><input type="password" class="textbox" name="pwdReadPass" /> <input class="button" type="submit" name="btnRead" value="GO" /><br>';
+		if($noteWritePass != "")
+		{
+			echo '</form><form action="" method="POST">';
+			echo '<label>Write</label><input type="password" class="textbox" name="pwdWritePass" /> <input class="button" type="submit" name="btnWrite" value="GO" />';
+		}
+		echo '</form></div></body></html>';
+		exit;
+	}
+	else 
+	{
+		if($noteWritePass == "")
+			$noteMode = "w";
+		else
+			$noteMode = "r";
+	}
+}
+
+//This varible stores the note text to be displayed in textarea
+$noteBodyDisplay = "";
+
+if(isset($_POST["txtWrite"])) //Perform write operations if main form has been submitted
+{
+	//Check for possible hacking.
+	$hdnWritePass = isset($_POST["hdnWritePass"])?$_POST["hdnWritePass"]:$hdnWritePass;
+	if($hdnWritePass != $noteWritePass)
+	{
+		echo 'Authentication Error. Please <a href=""/>refresh</a> and try again.';
+		echo '</form></div></body></html>';
+	}
+
+	//Get data from user-submited form
 	$noteTime = isset($_POST["txtTime"])?$_POST["txtTime"]:$noteTime;
 	$noteBody = isset($_POST["txtBody"])?$_POST["txtBody"]:$noteBody;
-	$noteRead = isset($_POST["txtRead"])?$_POST["txtRead"]:$noteRead;
-	$noteWrite = isset($_POST["txtWrite"])?$_POST["txtWrite"]:$noteWrite;
-	
-	$strOriginal = Array('/\$noteTime = ".*"/','/\$noteBody = "fgfd"/');
-	$strReplace = Array('\$noteTime = "'.$noteTime.'"','\$noteBody = "'.$noteBody.'"','\$noteRead = "'.$noteRead.'"','\$noteWrite = "'.$noteWrite.'"');
+	$noteReadPass = isset($_POST["txtRead"])?$_POST["txtRead"]:$noteReadPass;
+	$noteWritePass = isset($_POST["txtWrite"])?$_POST["txtWrite"]:$noteWritePass;
 
-	$stream = fopen('notepad.php',"r+");
+	//Store note body for display
+	$noteBodyDisplay = $noteBody;
+
+	//Escape special characters
+	$noteTime = addslashes($noteTime);
+	$noteBody = addslashes($noteBody);
+	$noteReadPass = addslashes($noteReadPass);
+	$noteWritePass = addslashes($noteWritePass);
+	$noteBody = preg_replace("/(\r\n|\r|\n)/", "\\n", $noteBody);
+	
+	//Replacement expressions for user data - to be applied to this file for 'saving'
+	$strOriginal = Array('/\$noteTime = ".*";/','/\$noteBody = ".*";/','/\$noteReadPass = ".*";/','/\$noteWritePass = ".*";/');
+	$strReplace = Array('\$noteTime = "'.$noteTime.'";','\$noteBody = "'.$noteBody.'";','\$noteReadPass = "'.$noteReadPass.'";','\$noteWritePass = "'.$noteWritePass.'";');
+
+	//Do file I/O
+	$stream = fopen(basename(__FILE__),"r+");
 	$fileRead = stream_get_contents($stream);
 	$fileWrite = preg_replace($strOriginal, $strReplace, $fileRead, 1);
 
-	//echo "<textarea>".htmlemv Rntities($fileWrite)."</textarea>";
-
+	//Commit Changes
 	if(flock($stream, LOCK_EX))
 	{
 		ftruncate($stream, 0);
@@ -52,39 +138,53 @@ if(isset($_POST["txtRead"])) //Perform write operations
 	} 
 	else
 	{
-		echo "Unable to write to file";
+		echo 'Unable to write to file.';
+		echo '</form></div></body></html>';
+		exit;
 	}
 
 	fclose($stream);
+	$noteMode = 'w';
+	$usrWritePass = $hdnWritePass;
 }
 
-/*
-preg_match('/\$noteTime = "dfgd"/', $strFile, $match );
-unset($strFile);*/
-
-/*
-if($noteRead !="" && !isset($_POST['txtRead']))
+//If note mode is not set to read or write - well, something is wrong.
+if($noteMode != 'r' && $noteMode != 'w')
 {
-	echo 'Enter "read" password to view read-only note, or enter "write" password for read-write mode.';
-	echo 'R<input type="password" name="txtRead" />';
-	echo 'W<input type="password" name="txtWrite"/>';
+	echo "Error";
+	echo '</form></div></body></html>';
 }
-else if($noteWrite !="" && isset($_POST['txtWrite']))
+
+//Some customization depending upon the mode.
+$isReadOnly = ($noteMode=='r')?'readonly':'';
+$txtModeName = ($noteMode == 'r')?"Read":"Write";
+
+echo '<div class="header">Notepad &mid; '.$txtModeName.' mode &mid; Last Save: '.stripslashes($noteTime).'</div>';
+
+echo '<label>Time</label><input class="textbox" type="text" name="txtTime" id="txtTime" value="'.stripslashes($noteTime).'" '.$isReadOnly.' /><br>';
+
+//If in write mode, show password feilds for editing
+if($noteMode == "w")
 {
-	if($noteWrite != isset($_POST['txtWrite']))
-	*/
+	echo '<label>Reading password</label><input class="textbox" type="text" name="txtRead" value="'.stripslashes($noteReadPass).'"/><label><i>[Blank to disable]</i></label><br>';
+	echo '<label>Writing password</label><input class="textbox" type="text" name="txtWrite" value="'.stripslashes($noteWritePass).'"/><label><i>[Blank to disable]</i></label><br>';
+}
 
-echo '<table>';
-echo '<tr><td>Time</td><td><input class="textbox" type="text" name="txtTime" id="txtTime" value="'.$noteTime.'" /></td></tr>';
-echo '<tr><td>Reading password</td><td><input class="textbox" type="text" name="txtRead" value="'.$noteRead.'"/> Blank to disable</td></tr>';
-echo '<tr><td>Writing password</td><td><input class="textbox" type="text" name="txtWrite" value="'.$noteWrite.'"/> Blank to disable</td></tr></table>';
-echo '<textarea class="textarea" name="txtBody" rows="25">'.$noteBody.'</textarea><br>';
+if ($noteBodyDisplay == "")
+	$noteBodyDisplay = preg_replace("/\\n/", "\n", stripslashes($noteBody));
 
+echo '<textarea class="textarea" name="txtBody" rows="25" '.$isReadOnly.'>'.$noteBodyDisplay.'</textarea><br>';
 
-echo '<input class="button" type="submit" onclick="this.disabled=1;this.form.submit();" value="Submit" />';
-
-
+//If in write mode, show submit button and add an hidden feild with write password. 
+if($noteMode == "w")
+{
+	echo '<input type="hidden" name="hdnWritePass" value="'.$usrWritePass.'" /><br>';
+	echo '<input class="button" type="submit" onclick="this.disabled=1;this.form.submit();" value="Save" />';
+}
+else // If in read mode, display link to convert to write mode.
+	echo '<a href="?write=y" class="button"/>Switch to write mode</a>';
 ?>
 	</form>
+	</div>
 	</body>
 	</html>
