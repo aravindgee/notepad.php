@@ -61,16 +61,16 @@ else if(isset($_POST["btnWrite"]))
 //If passwords have been set, and no password validation has been done, send authentication notice.
 if($noteMode == "n" && !isset($_POST["txtWrite"]))
 {
-	echo '<div class="header">Notepad &mid; Authentication Required</div>';
-
 	if(isset($_GET["write"]) && $noteWritePass != "") //User is converting read to write mode
 	{
+		echo '<div class="header">Notepad &lowast; Authentication Required</div>';
 		echo 'Write: <input type="password" class="textbox" name="pwdWritePass" /> <input class="button" type="submit" name="btnWrite" value="GO" />';
 		echo '</form></div></body></html>';
 		exit;
 	}
 	if($noteReadPass != "") //Authentication for reading as well as writing.
 	{
+		echo '<div class="header">Notepad &lowast; Authentication Required</div>';
 		echo '<label>Read</label><input type="password" class="textbox" name="pwdReadPass" /> <input class="button" type="submit" name="btnRead" value="GO" /><br>';
 		if($noteWritePass != "")
 		{
@@ -100,6 +100,7 @@ if(isset($_POST["txtWrite"])) //Perform write operations if main form has been s
 	{
 		echo 'Authentication Error. Please <a href=""/>refresh</a> and try again.';
 		echo '</form></div></body></html>';
+		exit;
 	}
 
 	//Get data from user-submited form
@@ -159,7 +160,7 @@ if($noteMode != 'r' && $noteMode != 'w')
 $isReadOnly = ($noteMode=='r')?'readonly':'';
 $txtModeName = ($noteMode == 'r')?"Read":"Write";
 
-echo '<div class="header">Notepad &mid; '.$txtModeName.' mode &mid; Last Save: '.stripslashes($noteTime).'</div>';
+echo '<div class="header">Notepad &lowast; '.$txtModeName.' mode &lowast; Last Save: '.stripslashes($noteTime).'</div>';
 
 echo '<label>Time</label><input class="textbox" type="text" name="txtTime" id="txtTime" value="'.stripslashes($noteTime).'" '.$isReadOnly.' /><br>';
 
